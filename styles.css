@@ -40,6 +40,7 @@ body.translucent-bg-theme-opacity .translucent-bg-overlay {
    ----------------------------------------------------------------------------- */
 body.translucent-bg-enabled .titlebar {
     -webkit-app-region: drag;
+    background-color: transparent !important;
 }
 
 body.translucent-bg-enabled .titlebar .titlebar-button,
