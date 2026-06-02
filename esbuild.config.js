@@ -43,12 +43,25 @@ const config = {
     ],
 };
 
-esbuild
-    .build(config)
-    .then(() => {
-        console.log('Build successful — output: main.js');
-    })
-    .catch((err) => {
-        console.error('Build failed:', err);
-        process.exit(1);
-    });
+if (isProd) {
+    esbuild
+        .build(config)
+        .then(() => {
+            console.log('Build successful — output: main.js');
+        })
+        .catch((err) => {
+            console.error('Build failed:', err);
+            process.exit(1);
+        });
+} else {
+    esbuild
+        .context(config)
+        .then((ctx) => ctx.watch())
+        .then(() => {
+            console.log('Watching for changes — output: main.js (Ctrl+C to stop)');
+        })
+        .catch((err) => {
+            console.error('Watch failed:', err);
+            process.exit(1);
+        });
+}

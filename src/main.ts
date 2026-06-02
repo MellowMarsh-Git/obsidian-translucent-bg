@@ -4,7 +4,7 @@ import { App, Plugin, PluginSettingTab, Setting, Platform, Notice } from 'obsidi
 // Types & Settings
 // ---------------------------------------------------------------------------
 
-type TranslucentBgMaterial = 'auto' | 'none' | 'mica' | 'acrylic' | 'tabbed';
+type TranslucentBgMaterial = 'none' | 'mica' | 'acrylic' | 'tabbed';
 
 interface TranslucentBgSettings {
     material: TranslucentBgMaterial;
@@ -12,7 +12,6 @@ interface TranslucentBgSettings {
     lightTintOpacity: number;
     darkTintColor: string;
     darkTintOpacity: number;
-    followTheme: boolean;
     /** When true, --workspace-background-translucent opacity is driven by the theme's :root variables. */
     themeHandlesOpacity: boolean;
     /** When true, the overlay uses --background-secondary + the theme's opacity vars instead of the plugin's color pickers. */
@@ -25,12 +24,15 @@ const DEFAULT_SETTINGS: TranslucentBgSettings = {
     lightTintOpacity: 0.35,
     darkTintColor: '#1e1e1e',
     darkTintOpacity: 0.45,
-    followTheme: true,
     themeHandlesOpacity: false,
     themeHandlesTint: false,
 };
 
 const OVERLAY_ID = 'translucent-bg-overlay';
+
+interface ElectronBrowserWindow {
+    setBackgroundMaterial(material: string): void;
+}
 
 // ---------------------------------------------------------------------------
 // Plugin
@@ -38,7 +40,7 @@ const OVERLAY_ID = 'translucent-bg-overlay';
 
 export default class TranslucentBgPlugin extends Plugin {
     settings: TranslucentBgSettings;
-    electronWindow: any = null;
+    electronWindow: ElectronBrowserWindow | null = null;
     private themeObserver: MutationObserver | null = null;
     private fullscreenHandler: (() => void) | null = null;
 
@@ -98,10 +100,12 @@ export default class TranslucentBgPlugin extends Plugin {
 
         document.body.classList.remove('is-translucent');
         document.body.classList.remove('translucent-bg-enabled');
+        document.body.classList.remove('translucent-bg-theme-opacity');
         document.body.removeAttribute('data-tbg-material');
         document.body.style.removeProperty('--workspace-background-translucent');
         document.body.style.removeProperty('--titlebar-background');
         document.body.style.removeProperty('--titlebar-background-focused');
+        document.body.style.removeProperty('--workspace-split-bg');
         document.body.style.removeProperty('--tbg-tint-base');
         document.body.style.removeProperty('--tbg-tint-opacity');
 
@@ -146,14 +150,14 @@ export default class TranslucentBgPlugin extends Plugin {
         }
     }
 
-    cycleMaterial() {
+    async cycleMaterial() {
         const order: TranslucentBgMaterial[] = ['mica', 'acrylic', 'tabbed', 'none'];
         const idx = order.indexOf(this.settings.material);
         const next = order[(idx + 1) % order.length];
         this.settings.material = next;
         this.applyMaterial(next);
         this.updateOverlayStyle();
-        this.saveSettings();
+        await this.saveSettings();
         new Notice(`Translucent BG: material = ${next}`);
     }
 
@@ -167,6 +171,7 @@ export default class TranslucentBgPlugin extends Plugin {
         document.body.style.setProperty('--workspace-background-translucent', 'transparent', 'important');
         document.body.style.setProperty('--titlebar-background', 'transparent', 'important');
         document.body.style.setProperty('--titlebar-background-focused', 'transparent', 'important');
+        document.body.style.setProperty('--workspace-split-bg', 'transparent');
     }
 
     // -----------------------------------------------------------------------
@@ -181,12 +186,6 @@ export default class TranslucentBgPlugin extends Plugin {
         document.body.prepend(overlay);
     }
 
-    /**
-     * themeHandlesOpacity: sets --workspace-background-translucent from the theme's opacity vars.
-     * themeHandlesTint: sets --tbg-tint-base to --background-secondary.
-     * themeHandlesOpacity: sets --tbg-tint-opacity from the theme's --translucent-light/dark-opacity.
-     * When both are on, also sets --workspace-background-translucent for Obsidian's shell layer.
-     */
     updateOverlayStyle() {
         this.themeObserver?.disconnect();
 
@@ -232,7 +231,7 @@ export default class TranslucentBgPlugin extends Plugin {
             document.body.style.setProperty('--workspace-background-translucent', 'transparent', 'important');
         }
 
-        this.resumeThemeObserver();
+        this.themeObserver?.observe(document.body, { attributes: true, attributeFilter: ['class'] });
     }
 
     // -----------------------------------------------------------------------
@@ -240,14 +239,8 @@ export default class TranslucentBgPlugin extends Plugin {
     // -----------------------------------------------------------------------
 
     private observeThemeChanges() {
-        if (!this.settings.followTheme) return;
         this.themeObserver?.disconnect();
         this.themeObserver = new MutationObserver(() => this.updateOverlayStyle());
-        this.themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-    }
-
-    private resumeThemeObserver() {
-        if (!this.settings.followTheme || !this.themeObserver) return;
         this.themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
     }
 
@@ -255,7 +248,7 @@ export default class TranslucentBgPlugin extends Plugin {
     // Electron window
     // -----------------------------------------------------------------------
 
-    private getElectronWindow(): any {
+    private getElectronWindow(): ElectronBrowserWindow | null {
         try {
             // @ts-ignore
             const electron = window.electron ?? (window as any).require?.('electron');

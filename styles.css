@@ -10,12 +10,13 @@
      --tbg-tint-base     CSS color (hex or var()) — origin color for the overlay
      --tbg-tint-opacity  0–1 number or CSS var()  — alpha for the overlay
 
-   The overlay uses CSS relative-color syntax so any color format, including hex,
-   is resolved natively without JS conversion.
+   The overlay applies --tbg-tint-base as background-color and --tbg-tint-opacity
+   as element opacity (no children, so element opacity is safe and avoids the
+   css-relative-colors compatibility issue).
 
    When .translucent-bg-theme-opacity is on <body>, --workspace-background-
-   translucent is set to rgb(from var(--background-secondary) r g b / <opacity>)
-   and the overlay is hidden — Obsidian's shell handles the tinted background.
+   translucent is set by JS and the overlay is hidden — Obsidian's shell handles
+   the tinted background.
    ============================================================================= */
 
 
@@ -24,8 +25,9 @@
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    background-color: rgb(from var(--tbg-tint-base, var(--background-secondary)) r g b / var(--tbg-tint-opacity, 0));
-    transition: background-color 120ms ease-out;
+    background-color: var(--tbg-tint-base, var(--background-secondary));
+    opacity: var(--tbg-tint-opacity, 0);
+    transition: background-color 120ms ease-out, opacity 120ms ease-out;
 }
 
 body.translucent-bg-theme-opacity .translucent-bg-overlay {
@@ -38,7 +40,6 @@ body.translucent-bg-theme-opacity .translucent-bg-overlay {
    ----------------------------------------------------------------------------- */
 body.translucent-bg-enabled .titlebar {
     -webkit-app-region: drag;
-    background-color: transparent !important;
 }
 
 body.translucent-bg-enabled .titlebar .titlebar-button,
@@ -54,13 +55,7 @@ body.translucent-bg-enabled .titlebar a {
    Workspace root — clear background so material / tint shows through
    ----------------------------------------------------------------------------- */
 body.translucent-bg-enabled .workspace-split.mod-root {
-    background-color: transparent !important;
+    background-color: var(--workspace-split-bg);
 }
 
 
-/* -----------------------------------------------------------------------------
-   "None" material / fullscreen — overlay opacity is forced to 1 via JS
-   ----------------------------------------------------------------------------- */
-body.translucent-bg-enabled[data-tbg-material="none"] .translucent-bg-overlay {
-    /* JS sets --tbg-tint-opacity: 1 when material is "none" */
-}

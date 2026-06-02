@@ -78,8 +78,8 @@ See [DOCS.md](https://github.com/MellowMarsh-Git/Obsidian-Translucent-BG/tree/ma
 ## Building
 
 ```bash
-npm run dev       # development build (source maps, no minification)
-npm run build     # production build  (minified, no source maps)
+npm run dev       # watch mode (source maps, rebuilds on change)
+npm run build     # production build (minified, no source maps)
 ```
 
 ---

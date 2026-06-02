@@ -46,10 +46,11 @@ The overlay reads two custom properties written to `<body>` at runtime:
 - `--tbg-tint-base` — the tint color (hex or `var()`)
 - `--tbg-tint-opacity` — the alpha channel (0–1 or `var()`)
 
-Composed in CSS using relative-color syntax, so hex colors are resolved natively without any JS conversion:
+Applied in CSS using `background-color` and `opacity` on the overlay element (which has no children, so element opacity is safe):
 
 ```css
-background-color: rgb(from var(--tbg-tint-base) r g b / var(--tbg-tint-opacity));
+background-color: var(--tbg-tint-base);
+opacity: var(--tbg-tint-opacity);
 ```
 
 Each toggle controls exactly one variable:
