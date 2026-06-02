@@ -19,7 +19,7 @@ interface TranslucentBgSettings {
 }
 
 const DEFAULT_SETTINGS: TranslucentBgSettings = {
-    material: 'mica',
+    material: 'acrylic',
     lightTintColor: '#ffffff',
     lightTintOpacity: 0.35,
     darkTintColor: '#1e1e1e',
@@ -297,7 +297,7 @@ class TranslucentBgSettingTab extends PluginSettingTab {
             .addDropdown((dd) =>
                 dd
                     .addOption('mica',    'Mica')
-                    .addOption('acrylic', 'Acrylic')
+                    .addOption('acrylic', 'Acrylic (recommended)')
                     .addOption('tabbed',  'Tabbed')
                     .addOption('none',    'None (disable)')
                     .setValue(this.plugin.settings.material)
